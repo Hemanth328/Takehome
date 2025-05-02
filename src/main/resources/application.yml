@@ -1,0 +1,13 @@
+spring:
+  application:
+    name: takehome
+
+resilience4j:
+  circuitbreaker:
+    configs:
+      maxAttempts: 3
+      waitDuration: 100
+      enableExponentialBackoff: true
+      exponentialBackoffMultiplier: 2
+
+
