@@ -5,6 +5,7 @@ import com.org.takehome.dto.RequestDto;
 import com.org.takehome.enums.ApiMethod;
 import com.org.takehome.service.ApiFactory;
 import io.github.resilience4j.retry.annotation.Retry;
+import lombok.AllArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
@@ -35,7 +36,6 @@ public class AsyncController {
 
         logger.info("handlePostRequest :  Received request for async post");
         logger.debug("handlePostRequest :  Received request for async post");
-
 
         ApiMethod method = requestWrapper.getApiMethod();
         RequestDto requestDto = requestWrapper.getRequestDTO();

@@ -104,8 +104,17 @@ public class RestFactoryAsync implements ApiFactory{
             @Override
             public void completed(HttpResponse result) {
                 try {
+                    int statusCode = result.getStatusLine().getStatusCode();
                     String responseString = EntityUtils.toString(result.getEntity(), StandardCharsets.UTF_8);
-                    future.complete(responseString);
+
+                    if(statusCode >= 200 && statusCode <300) {
+                        logger.info("Response from target: {}", responseString);
+                        future.complete(responseString);
+                    } else {
+                        logger.error("Error from target: {}", responseString);
+                        future.completeExceptionally(new Exception(responseString));
+                    }
+
                 } catch (IOException e) {
                     future.completeExceptionally(e);
                 } finally {
