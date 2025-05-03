@@ -5,7 +5,7 @@ import lombok.Data;
 @Data
 public class AsyncRequestWrapper {
     private ApiMethod apiMethod;
-    private RequestDto requestDto;
+    private RequestDto requestDTO;
     private int timeout;
 }
 

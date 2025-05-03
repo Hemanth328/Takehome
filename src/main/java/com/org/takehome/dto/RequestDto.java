@@ -2,7 +2,6 @@ package com.org.takehome.dto;
 
 import com.org.takehome.enums.ApiMethod;
 import lombok.Data;
-import org.apache.http.NameValuePair;
 
 import java.util.List;
 import java.util.Map;

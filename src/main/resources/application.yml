@@ -2,12 +2,20 @@ spring:
   application:
     name: takehome
 
-resilience4j:
-  circuitbreaker:
+resilience4j.retry:
     configs:
-      maxAttempts: 3
-      waitDuration: 100
-      enableExponentialBackoff: true
-      exponentialBackoffMultiplier: 2
+      asyncRetry:
+        maxAttempts: 3
+        enable-exponential-backoff: true
+        exponential-backoff-multiplier: 2
+        wait-duration:
+          nanos: 100
+
+
+logging:
+  level:
+    com:
+      org:
+        takehome: "DEBUG"
 
 

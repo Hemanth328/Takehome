@@ -2,18 +2,19 @@ package com.org.takehome.service;
 
 import com.org.takehome.dto.RequestDto;
 import com.org.takehome.enums.ApiMethod;
-import com.org.takehome.ssl.SSLConnectionSocketFactoryAdapter;
 import org.apache.http.*;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.*;
 import org.apache.http.concurrent.FutureCallback;
-import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.entity.*;
 import org.apache.http.impl.nio.client.*;
+import org.apache.http.nio.conn.ssl.SSLIOSessionStrategy;
 import org.apache.http.util.EntityUtils;
 import org.slf4j.*;
 import org.springframework.stereotype.Service;
 
+import javax.net.ssl.SSLContext;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyManagementException;
@@ -27,45 +28,45 @@ public class RestFactoryAsync implements ApiFactory{
 
     @Override
     public CompletableFuture<String> executeTarget(ApiMethod apiMethod, RequestDto dto,
-                                                   SSLConnectionSocketFactory sslConnectionSocketFactory, int timeout) throws NoSuchAlgorithmException, KeyManagementException {
+                                                   SSLContext sslContext, int timeout) throws NoSuchAlgorithmException, KeyManagementException {
 
         return switch (apiMethod) {
-            case GET -> invokeAsync(new HttpGet(dto.getUrl()), dto, sslConnectionSocketFactory, timeout);
+            case GET -> invokeAsync(new HttpGet(dto.getUrl()), dto, sslContext, timeout);
             case DELETE -> {
                 HttpDelete delete = new HttpDelete(dto.getUrl());
-                yield invokeAsync(delete, dto, sslConnectionSocketFactory, timeout);
+                yield invokeAsync(delete, dto, sslContext, timeout);
             }
             case OPTIONS -> {
                 HttpOptions options = new HttpOptions(dto.getUrl());
-                yield invokeAsync(options, dto, sslConnectionSocketFactory, timeout);
+                yield invokeAsync(options, dto, sslContext, timeout);
             }
             case PATCH -> {
                 HttpPatch patch = new HttpPatch(dto.getUrl());
                 if (dto.getRequestBody() != null) {
                     patch.setEntity(new StringEntity(dto.getRequestBody(), ContentType.APPLICATION_JSON));
                 }
-                yield invokeAsync(patch, dto, sslConnectionSocketFactory, timeout);
+                yield invokeAsync(patch, dto, sslContext, timeout);
             }
             case POST -> {
                 HttpPost post = new HttpPost(dto.getUrl());
                 if (dto.getRequestBody() != null) {
                     post.setEntity(new StringEntity(dto.getRequestBody(), ContentType.APPLICATION_JSON));
                 }
-                yield invokeAsync(post, dto, sslConnectionSocketFactory, timeout);
+                yield invokeAsync(post, dto, sslContext, timeout);
             }
             case PUT -> {
                 HttpPut put = new HttpPut(dto.getUrl());
                 if (dto.getRequestBody() != null) {
                     put.setEntity(new StringEntity(dto.getRequestBody(), ContentType.APPLICATION_JSON));
                 }
-                yield invokeAsync(put, dto, sslConnectionSocketFactory, timeout);
+                yield invokeAsync(put, dto, sslContext, timeout);
             }
         };
     }
 
     private CompletableFuture<String> invokeAsync(HttpRequestBase request,
                                                   RequestDto dto,
-                                                  SSLConnectionSocketFactory sslConnectionSocketFactory,
+                                                  SSLContext sslContext,
                                                   int timeout) throws NoSuchAlgorithmException, KeyManagementException {
 
         CompletableFuture<String> future = new CompletableFuture<>();
@@ -87,8 +88,13 @@ public class RestFactoryAsync implements ApiFactory{
         HttpAsyncClientBuilder clientBuilder = HttpAsyncClients.custom()
                 .setDefaultRequestConfig(config);
 
-        if (sslConnectionSocketFactory != null) {
-            clientBuilder.setSSLStrategy(new SSLConnectionSocketFactoryAdapter(sslConnectionSocketFactory));
+        if (sslContext != null) {
+            clientBuilder.setSSLStrategy(new SSLIOSessionStrategy(
+                    sslContext,
+                    new String[]{"TLSv1.2", "TLSv1.3"},
+                    null,
+                    NoopHostnameVerifier.INSTANCE
+            ));
         }
 
         CloseableHttpAsyncClient client = clientBuilder.build();
