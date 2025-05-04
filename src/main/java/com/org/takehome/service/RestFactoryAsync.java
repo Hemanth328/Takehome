@@ -12,6 +12,10 @@ import org.apache.http.impl.nio.client.*;
 import org.apache.http.nio.conn.ssl.SSLIOSessionStrategy;
 import org.apache.http.util.EntityUtils;
 import org.slf4j.*;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Recover;
+import org.springframework.retry.annotation.Retryable;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import javax.net.ssl.SSLContext;
@@ -27,6 +31,12 @@ public class RestFactoryAsync implements ApiFactory{
     private static final Logger logger = LoggerFactory.getLogger(RestFactoryAsync.class);
 
     @Override
+    @Async
+    @Retryable(
+            value = { IOException.class },
+            maxAttempts = 3,
+            backoff = @Backoff(delay = 2000)
+    )
     public CompletableFuture<String> executeTarget(ApiMethod apiMethod, RequestDto dto,
                                                    SSLContext sslContext, int timeout) throws NoSuchAlgorithmException, KeyManagementException {
 
@@ -97,6 +107,8 @@ public class RestFactoryAsync implements ApiFactory{
             ));
         }
 
+        clientBuilder.setSSLHostnameVerifier(NoopHostnameVerifier.INSTANCE);
+
         CloseableHttpAsyncClient client = clientBuilder.build();
         client.start();
 
@@ -107,12 +119,12 @@ public class RestFactoryAsync implements ApiFactory{
                     int statusCode = result.getStatusLine().getStatusCode();
                     String responseString = EntityUtils.toString(result.getEntity(), StandardCharsets.UTF_8);
 
-                    if(statusCode >= 200 && statusCode <300) {
+                    if(statusCode >= 200 && statusCode <300 || statusCode == 403) {
                         logger.info("Response from target: {}", responseString);
                         future.complete(responseString);
                     } else {
                         logger.error("Error from target: {}", responseString);
-                        future.completeExceptionally(new Exception(responseString));
+                        future.completeExceptionally(new IOException(responseString));
                     }
 
                 } catch (IOException e) {
@@ -144,5 +156,12 @@ public class RestFactoryAsync implements ApiFactory{
         } catch (IOException e) {
             logger.error("Error closing async client", e);
         }
+    }
+
+    @Recover
+    public CompletableFuture<String> recover(IOException e, ApiMethod apiMethod, RequestDto dto,
+                                             SSLContext sslContext, int timeout) {
+        logger.error("Failed after retries: {}", e.getMessage());
+        return CompletableFuture.completedFuture("Fallback response due to error: " + e.getMessage());
     }
 }

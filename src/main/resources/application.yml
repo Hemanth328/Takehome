@@ -2,20 +2,13 @@ spring:
   application:
     name: takehome
 
-resilience4j.retry:
-    configs:
-      asyncRetry:
-        maxAttempts: 3
-        enable-exponential-backoff: true
-        exponential-backoff-multiplier: 2
-        wait-duration:
-          nanos: 100
-
 
 logging:
   level:
     com:
       org:
         takehome: "DEBUG"
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg %X{X-Correlation-ID}%n"
 
 
