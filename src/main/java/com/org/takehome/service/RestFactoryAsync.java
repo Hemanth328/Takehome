@@ -2,6 +2,7 @@ package com.org.takehome.service;
 
 import com.org.takehome.dto.RequestDto;
 import com.org.takehome.enums.ApiMethod;
+import com.org.takehome.exceptions.DownstreamServiceException;
 import org.apache.http.*;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.*;
@@ -39,6 +40,8 @@ public class RestFactoryAsync implements ApiFactory{
     )
     public CompletableFuture<String> executeTarget(ApiMethod apiMethod, RequestDto dto,
                                                    SSLContext sslContext, int timeout) throws NoSuchAlgorithmException, KeyManagementException {
+
+        logger.info("Executing target: API METHOD {}", apiMethod);
 
         return switch (apiMethod) {
             case GET -> invokeAsync(new HttpGet(dto.getUrl()), dto, sslContext, timeout);
@@ -79,14 +82,14 @@ public class RestFactoryAsync implements ApiFactory{
                                                   SSLContext sslContext,
                                                   int timeout) throws NoSuchAlgorithmException, KeyManagementException {
 
-        CompletableFuture<String> future = new CompletableFuture<>();
+        logger.info("InvokeAsync method: {}", request.getRequestLine());
 
+        CompletableFuture<String> future = new CompletableFuture<>();
         RequestConfig config = RequestConfig.custom()
                 .setConnectTimeout(timeout)
                 .setConnectionRequestTimeout(timeout)
                 .setSocketTimeout(timeout)
                 .build();
-
         request.setConfig(config);
 
         // Add headers
@@ -122,9 +125,8 @@ public class RestFactoryAsync implements ApiFactory{
                         future.complete(responseString);
                     } else {
                         logger.error("Error from target: {}", responseString);
-                        future.completeExceptionally(new IOException(responseString));
+                        future.completeExceptionally(new DownstreamServiceException(statusCode, responseString));
                     }
-
                 } catch (IOException e) {
                     future.completeExceptionally(e);
                 } finally {
@@ -152,7 +154,7 @@ public class RestFactoryAsync implements ApiFactory{
         try {
             client.close();
         } catch (IOException e) {
-            logger.error("Error closing async client", e);
+            logger.error("Error closing async client", e.getMessage());
         }
     }
 

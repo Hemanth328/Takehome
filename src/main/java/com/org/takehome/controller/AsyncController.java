@@ -61,11 +61,13 @@ public class AsyncController {
 
     @RequestMapping(value="/options", method={RequestMethod.OPTIONS,RequestMethod.GET})
     public CompletableFuture<ResponseEntity<String>> handleOptionsRequest(@RequestBody AsyncRequestWrapper requestWrapper) throws NoSuchAlgorithmException, KeyManagementException {
-    logger.debug("handleOptionsRequest :  Received request for async options");
-    return handleRequest(requestWrapper);
+        logger.debug("handleOptionsRequest :  Received request for async options");
+        return handleRequest(requestWrapper);
     }
 
     private CompletableFuture<ResponseEntity<String>> handleRequest(AsyncRequestWrapper requestWrapper) throws NoSuchAlgorithmException, KeyManagementException {
+        logger.info("handleRequest :  Received request for async");
+
         ApiMethod method = requestWrapper.getApiMethod();
         RequestDto requestDto = requestWrapper.getRequestDTO();
         int timeout = requestWrapper.getTimeout();
