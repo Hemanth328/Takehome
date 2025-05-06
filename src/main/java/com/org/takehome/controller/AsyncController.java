@@ -29,9 +29,7 @@ public class AsyncController {
 
     @PostMapping("/post")
     public CompletableFuture<ResponseEntity<String>> handlePostRequest(@RequestBody AsyncRequestWrapper requestWrapper) throws NoSuchAlgorithmException, KeyManagementException {
-
         logger.info("handlePostRequest :  Received request for async post");
-
         return handleRequest(requestWrapper);
     }
 

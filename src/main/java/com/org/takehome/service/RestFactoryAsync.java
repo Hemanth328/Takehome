@@ -107,8 +107,6 @@ public class RestFactoryAsync implements ApiFactory{
             ));
         }
 
-        clientBuilder.setSSLHostnameVerifier(NoopHostnameVerifier.INSTANCE);
-
         CloseableHttpAsyncClient client = clientBuilder.build();
         client.start();
 
